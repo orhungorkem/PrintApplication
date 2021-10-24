@@ -6,7 +6,9 @@ import java.rmi.RemoteException;
 public class Client {
 
     public static void main(String [] args) throws MalformedURLException, NotBoundException, RemoteException {
-        Printer printer = (Printer) Naming.lookup("rmi://localhost:3099/printer");
-        System.out.println(printer.printFromQueue("Custom input which will be changed"));
+        Printer printServer = (Printer) Naming.lookup("rmi://localhost:3099/printer");
+        printServer.print("aaaa","Printer 1");
+        printServer.print("bbbb","Printer 1");
+        System.out.println(printServer.getPrinters().get("Printer 1").getJobs().toString());
     }
 }
