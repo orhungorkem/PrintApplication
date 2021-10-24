@@ -9,6 +9,10 @@ public class Client {
         Printer printServer = (Printer) Naming.lookup("rmi://localhost:3099/printer");
         printServer.print("aaaa","Printer 1");
         printServer.print("bbbb","Printer 1");
-        System.out.println(printServer.getPrinters().get("Printer 1").getJobs().toString());
+        printServer.print("aaaa","Printer 1");
+        printServer.print("bbbb","Printer 1");
+        printServer.queue("Printer 1");
+        printServer.topQueue("Printer 1",2);
+        printServer.queue("Printer 1");
     }
 }
