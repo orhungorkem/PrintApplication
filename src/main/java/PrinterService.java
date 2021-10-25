@@ -45,7 +45,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String queue(String printer, String username) throws RemoteException {
+    public String queue(String printer) throws RemoteException {
 
         if(currentSession!=null && currentSession.isAuthenticated()) {
             PrinterObject current = this.printers.get(printer);
@@ -53,7 +53,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             String response = "Print Queue for "+printer+"\n";
             for (int i = 0; i < jobs.size(); i++) {
                 JobObject job = jobs.get(i);
-                if (job.getUsername().equals(username)) {
+                if (job.getUsername().equals(this.currentSession.getUsername())) {
                     response += job.getId() + " , " + job.getFilename()+"\n";
                 }
             }
@@ -63,13 +63,46 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public void topQueue(String printer, int job) throws RemoteException {
+    public String topQueue(String printer, int job) throws RemoteException {
 
         //put the job to the top of "user's queue"
+        if(currentSession==null || !currentSession.isAuthenticated()){
+            return "You do not have access to print server.";
+        }
+
+        PrinterObject p = this.printers.get(printer);
+        List<JobObject> jobs = p.getJobs();
+        List<JobObject> userJobs = new LinkedList<>();
+        List<Integer> indices = new LinkedList<>();
+        int index = -1;
+        for(int i = 0;i<jobs.size();i++){
+            if(jobs.get(i).getUsername().equals(this.currentSession.getUsername())){
+                userJobs.add(jobs.get(i));
+                indices.add(i);
+                if(jobs.get(i).getId()==job){  //the job to top
+                    index = i;
+                    break;
+                }
+            }
+        }
+        if(index==-1){
+            return "Job not found.";
+        }
+        JobObject topJob = jobs.get(index);
+        for(int i = userJobs.size()-2 ; i>=0 ; i--) {
+            userJobs.set(i+1, userJobs.get(i));
+        }
+        userJobs.set(0,topJob);
+        for (int i=0; i<indices.size();i++){
+            jobs.set(indices.get(i), userJobs.get(i));
+        }
+        return "Job "+job+" moved to top of the queue.";
+
+
     }
 
     @Override
-    public void start(String username, String password) throws RemoteException{
+    public String start(String username, String password) throws RemoteException{
 
         //gets user info and assigns session object to current session
         if(checkUsername(username)){  //if username is recorded, create session
@@ -78,18 +111,20 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             this.currentSession = session;
         }
         else{
-            return;
+            return "Username does not exist.";
         }
         if(authenticate(username, password)){
             this.currentSession.setAuthenticated(true);  //now authenticated
+            return "Authentication completed.";
         }
-
+        return "Wrong password.";
     }
 
     @Override
-    public void stop(){
+    public String stop(){
         //make session object null
         this.currentSession = null;
+        return "Session ended.";
     }
 
     @Override
