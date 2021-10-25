@@ -31,23 +31,35 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public void print(String filename, String printer, String username){
-        PrinterObject current = this.printers.get(printer);
-        JobObject job = new JobObject(filename, current.getJobCounter(), username);
-        current.incrementJobCounter();
-        current.getJobs().add(job);
+    public String print(String filename, String printer, String username){
+        if(currentSession!=null && currentSession.isAuthenticated()) {
+            PrinterObject current = this.printers.get(printer);
+            JobObject job = new JobObject(filename, current.getJobCounter(), username);
+            current.incrementJobCounter();
+            current.getJobs().add(job);
+            return "Print job is added to queue.";
+        }
+        else{
+            return "You do not have access to print server.";
+        }
     }
 
     @Override
-    public void queue(String printer, String username) throws RemoteException {
-        PrinterObject current = this.printers.get(printer);
-        List<JobObject> jobs = current.getJobs();
-        for(int i = 0;i<jobs.size();i++){
-            JobObject job = jobs.get(i);
-            if(job.getUsername().equals(username)) {
-                System.out.println(job.getId() + " , " + job.getFilename());
+    public String queue(String printer, String username) throws RemoteException {
+
+        if(currentSession!=null && currentSession.isAuthenticated()) {
+            PrinterObject current = this.printers.get(printer);
+            List<JobObject> jobs = current.getJobs();
+            String response = "Print Queue for "+printer+"\n";
+            for (int i = 0; i < jobs.size(); i++) {
+                JobObject job = jobs.get(i);
+                if (job.getUsername().equals(username)) {
+                    response += job.getId() + " , " + job.getFilename()+"\n";
+                }
             }
+            return response;
         }
+        return "You do not have access to print server.";
     }
 
     @Override
@@ -56,32 +68,75 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         //put the job to the top of "user's queue"
     }
 
-    public void start(String username, String password){
+    @Override
+    public void start(String username, String password) throws RemoteException{
 
         //gets user info and assigns session object to current session
+        if(checkUsername(username)){  //if username is recorded, create session
+            SessionObject session = new SessionObject(this.sessionIdCounter,username,false);  //not authenticated yet
+            this.sessionIdCounter++;
+            this.currentSession = session;
+        }
+        else{
+            return;
+        }
+        if(authenticate(username, password)){
+            this.currentSession.setAuthenticated(true);  //now authenticated
+        }
 
-
-        return;
     }
 
-
+    @Override
     public void stop(){
         //make session object null
         this.currentSession = null;
     }
 
-    public void restart(){
+    @Override
+    public String restart(){
         //empty the queue for the relevant user
         //make current session null and assign it to a neww session
-        return;
+        if(currentSession!=null && currentSession.isAuthenticated()) {
+            for (String name : printers.keySet()) {
+                PrinterObject printer = printers.get(name);
+                List<JobObject> jobs = printer.getJobs();
+                Iterator<JobObject> i = jobs.iterator();
+                while (i.hasNext()) {
+                    JobObject job = i.next();
+                    if (job.getUsername().equals(this.currentSession.getUsername())) {  //job belongs to the current user
+                        i.remove();
+                    }
+                }
+            }
+            this.currentSession = new SessionObject(this.sessionIdCounter, this.currentSession.getUsername(), true);
+            return "Restarting session.";
+        }
+        return "You do not have access to print server.";
+
+
     }
 
 
-
-    public void status(String printer){
+    @Override
+    public String status(String printer){
         //show printer metadata (name and number of jobs in the queue)
+        PrinterObject p = this.printers.get(printer);
+        return "Name: "+printer+"\n"+"Number of jobs in queue: "+p.getJobs().size()+"\n";
     }
 
+    @Override
+    public boolean authenticate(String username, String password) throws RemoteException {
+
+        //fill with authentication details
+        return true;
+    }
+
+    @Override
+    public boolean checkUsername(String username) throws RemoteException {
+
+        //check that username is in database
+        return true;
+    }
 
 
 }
