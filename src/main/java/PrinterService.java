@@ -2,6 +2,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
@@ -23,39 +25,58 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public void print(String filename, String printer){
+    public void print(String filename, String printer, String username){
         PrinterObject current = this.printers.get(printer);
-        current.getJobs().add(filename);
-        current.getJobIds().add(current.getJobCounter());
+        JobObject job = new JobObject(filename, current.getJobCounter(), username);
         current.incrementJobCounter();
+        current.getJobs().add(job);
     }
 
     @Override
-    public void queue(String printer) throws RemoteException {
-
+    public void queue(String printer, String username) throws RemoteException {
         PrinterObject current = this.printers.get(printer);
-        List<String> jobs = current.getJobs();
-        List<Integer> ids = current.getJobIds();
-        for(int i = 0;i<current.getJobs().size();i++){
-            System.out.println(ids.get(i)+ " , "+jobs.get(i));
+        List<JobObject> jobs = current.getJobs();
+        for(int i = 0;i<jobs.size();i++){
+            JobObject job = jobs.get(i);
+            if(job.getUsername().equals(username)) {
+                System.out.println(job.getId() + " , " + job.getFilename());
+            }
         }
     }
 
     @Override
     public void topQueue(String printer, int job) throws RemoteException {
 
-        PrinterObject current = this.printers.get(printer);
-        List<String> jobs = current.getJobs();
-        List<Integer> ids = current.getJobIds();
-        int index = ids.indexOf(job);
-        String jobFile = jobs.get(index);
-        for(int i = index;i>0;i--){
-            jobs.set(i,jobs.get(i-1));
-            ids.set(i,ids.get(i-1));
-        }
-        jobs.set(0,jobFile);
-        ids.set(0,job);
-        System.out.println("Top of the queue is updated");
+        //put the job to the top of "user's queue"
     }
+
+    public SessionObject start(String username, String password){
+
+        //gets user info and returns session object (user logs in)
+
+        return null;
+    }
+
+
+    public boolean stop(){
+
+        return true;
+    }
+
+    public SessionObject restart(){
+        //empty the queue for the relevant user
+        return null;
+    }
+
+
+
+    public void status(String printer){
+        //show printer metadata (name and number of jobs in the queue)
+    }
+
+
+
+
+
 
 }

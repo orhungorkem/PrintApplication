@@ -8,8 +8,7 @@ import java.util.Queue;
 public class PrinterObject implements Serializable {
 
     private String name;
-    private List<String> jobs;  //keeps the list of filenames to print
-    private List<Integer> jobIds; // keeps the ids of jobs
+    private List<JobObject> jobs;  //queue for the jobs
     private int jobCounter;  //determines the id to give to the new job
 
 
@@ -17,7 +16,6 @@ public class PrinterObject implements Serializable {
     public PrinterObject(String name) {
         this.name = name;
         this.jobs = new LinkedList<>();
-        this.jobIds = new LinkedList<>();
         this.jobCounter = 1;
     }
 
@@ -33,12 +31,8 @@ public class PrinterObject implements Serializable {
         this.jobCounter++;
     }
 
-    public List<String> getJobs() {
+    public List<JobObject> getJobs() {
         return jobs;
-    }
-
-    public List<Integer> getJobIds() {
-        return jobIds;
     }
 
     @Override
