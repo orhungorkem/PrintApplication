@@ -65,9 +65,9 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
 
-    public boolean stop(){
+    public void stop(){
         //make session object null
-        return true;
+        this.currentSession = null;
     }
 
     public void restart(){
@@ -81,9 +81,6 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public void status(String printer){
         //show printer metadata (name and number of jobs in the queue)
     }
-
-
-
 
 
 
