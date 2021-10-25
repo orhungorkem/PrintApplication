@@ -7,9 +7,9 @@ public interface Printer extends Remote {
     void queue(String printer, String username) throws RemoteException;
     void topQueue(String printer, int job) throws RemoteException;
     Map<String, PrinterObject> getPrinters() throws RemoteException;
-    SessionObject start(String username, String password) throws RemoteException;
+    void start(String username, String password) throws RemoteException;
     boolean stop() throws RemoteException;
-    SessionObject restart() throws RemoteException;
+    void restart() throws RemoteException;
     void status(String printer) throws RemoteException;
 }
 

@@ -12,12 +12,18 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public PrinterService() throws RemoteException {
         super();
         this.printers= new HashMap<>();
+        this.sessionIdCounter = 1;   //this needs to be incremented in each session creation!!!
+        this.currentSession = null;
         this.printers.put("Printer 1",new PrinterObject("Printer 1"));
         this.printers.put("Printer 2",new PrinterObject("Printer 2"));
         this.printers.put("Printer 3",new PrinterObject("Printer 3"));
     }
 
     private Map<String, PrinterObject> printers;  //service should access to the printers
+
+    private int sessionIdCounter;
+
+    private SessionObject currentSession;  //keeps the current session
 
     @Override
     public Map<String, PrinterObject> getPrinters(){
@@ -50,22 +56,24 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         //put the job to the top of "user's queue"
     }
 
-    public SessionObject start(String username, String password){
+    public void start(String username, String password){
 
-        //gets user info and returns session object (user logs in)
+        //gets user info and assigns session object to current session
 
-        return null;
+
+        return;
     }
 
 
     public boolean stop(){
-
+        //make session object null
         return true;
     }
 
-    public SessionObject restart(){
+    public void restart(){
         //empty the queue for the relevant user
-        return null;
+        //make current session null and assign it to a neww session
+        return;
     }
 
 
