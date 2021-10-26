@@ -20,6 +20,10 @@ public class SessionObject {
         return username;
     }
 
+    public void setUsername(String value) {
+        this.username = value;
+    }
+
     public boolean isAuthenticated() {
         return authenticated;
     }

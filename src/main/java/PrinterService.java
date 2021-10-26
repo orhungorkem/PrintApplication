@@ -3,6 +3,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
+import java.io.FileWriter;
 
 public class PrinterService extends UnicastRemoteObject implements Printer {
     public PrinterService() throws RemoteException {
@@ -157,7 +159,6 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     }
 
-
     @Override
     public String status(String printer) throws RemoteException {
         //show printer metadata (name and number of jobs in the queue)
@@ -226,21 +227,112 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         return false;
     }
 
-    public SessionObject getCurrentSession() {
-        return currentSession;
+    @Override
+    public String readConfig(String parameter) throws RemoteException {
+        if (currentSession != null && currentSession.isAuthenticated()) {
+            // Get username from session
+            var username = currentSession.getUsername();
+
+            // Read credential file
+            Path pathName = Path.of("data/cred-hashed.txt");
+            String actual = "";
+            try {
+                actual = Files.readString(pathName);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Get username and password
+            String response = "";
+            var b = actual.split("\r\n");
+            for (int i = 0; i < b.length; i++) {
+                var item = b[i];
+                var arguments = item.split(",");
+                if (username.equals(arguments[0])) {
+                    switch(parameter) {
+                        case "username":
+                            response += "Username: " + arguments[0] + "\n";
+                            break;
+                        default:
+                            response = "There is no configuration parameter with the name: " + parameter + "\n";
+                    }
+
+                    return response;
+                }
+            }
+        }
+
+        return "You do not have access to the user configuration.";
     }
 
-    public void setCurrentSession(SessionObject currentSession) {
-        this.currentSession = currentSession;
-    }
+    @Override
+    public String setConfig(String parameter, String value) throws RemoteException {
+        if (currentSession != null && currentSession.isAuthenticated()) {
+            // Get username from session
+            var username = currentSession.getUsername();
 
+            // Read credential file
+            Path pathName = Path.of("data/cred-hashed.txt");
+            String actual = "";
+            FileWriter writer = null;
+            try {
+                // Get file
+                actual = Files.readString(pathName);
 
-    public int getSessionIdCounter() {
-        return sessionIdCounter;
-    }
+                // Create temp file
+                writer = new FileWriter("data/cred-hashed-temp.txt", true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-    public void incrSessionIdCounter() {
-        sessionIdCounter += 1;
+            // Get username and password
+            String response = "";
+            var b = actual.split("\r\n");
+            for (int i = 0; i < b.length; i++) {
+                var item = b[i];
+                var arguments = item.split(",");
+                if (username.equals(arguments[0])) {
+                    switch(parameter) {
+                        case "password":
+                            var pass = value + "--user-5";
+                            var pwHashed = pass.hashCode();
+                            item = "user-" + i + "," + pwHashed;
+                            response = "There parameter with the name: " + parameter + "is updated \n";
+                            break;
+                        case "username":
+                            item = "" + value + "," + arguments[1];
+                            this.currentSession.setUsername(value);
+                            response = "There parameter with the name: " + parameter + " is updated \n";
+                            break;
+                        default:
+                            response = "There is no configuration parameter with the name: " + parameter + "\n";
+                    }
+                }
+
+                // Write to temp file
+                try {
+                    writer.write("" + item + "\r\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // Close write mode
+            try {
+                writer.close();
+                Path oldSource = Paths.get("data/cred-hashed.txt");
+                Path newSource = Paths.get("data/cred-hashed-temp.txt");
+                Files.delete(oldSource);
+                Files.move(newSource, newSource.resolveSibling("cred-hashed.txt"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return response;
+        }
+
+        return "You do not have access to the user configuration.";
+
     }
 
     public String saltPassword(String password, String salt) {

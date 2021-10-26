@@ -12,6 +12,9 @@ public interface Printer extends Remote {
     String restart() throws RemoteException;
     String status(String printer) throws RemoteException;
     boolean checkPassword(String username, String password) throws RemoteException;
+    String readConfig(String parameter) throws RemoteException;
+    String setConfig(String parameter, String value) throws RemoteException;
+    boolean authenticate(String username, String password) throws RemoteException;
     boolean checkUsername(String username) throws RemoteException;
 }
 

@@ -39,4 +39,49 @@ class PrinterServiceTest {
         var a = 'a';
         Assertions.assertEquals(a, 'a');
     }
+
+    @Test
+    public void testReadConfig() throws RemoteException {
+        service = new PrinterService();
+
+        // Open session
+        service.start("user-5", "password-5");
+
+        // Read config
+        var result = service.readConfig("username");
+        Assertions.assertEquals("Username: user-5\n" , result);
+
+        result = service.readConfig("username");
+        Assertions.assertEquals("Username: user-5\n" , result);
+
+        // Fake assertions
+        var a = 'a';
+        Assertions.assertEquals(a, 'a');
+    }
+
+    @Test
+    public void testSetConfig() throws RemoteException {
+        service = new PrinterService();
+
+        // Open session
+        service.start("user-5", "password-5");
+
+        // Read config
+        var result = service.setConfig("username", "user-5-wow");
+        Assertions.assertEquals("There parameter with the name: username is updated \n" , result);
+
+        result = service.readConfig("username");
+        Assertions.assertEquals("Username: user-5-wow\n" , result);
+
+        // Roll back changes
+        result = service.setConfig("username", "user-5");
+        Assertions.assertEquals("There parameter with the name: username is updated \n" , result);
+
+        result = service.readConfig("username");
+        Assertions.assertEquals("Username: user-5\n" , result);
+
+        // Fake assertions
+        var a = 'a';
+        Assertions.assertEquals(a, 'a');
+    }
 }
