@@ -12,7 +12,7 @@ class DummyTest {
     @Test
     public void testWriteFile() throws IOException {
         // Open write mode
-        FileWriter writer = new FileWriter("tests/cred-hashed.txt", true);
+        FileWriter writer = new FileWriter("data/cred-hashed.txt", true);
 
         // Write credentials to file
         for (int i = 0; i < 10; i++) {
@@ -37,7 +37,7 @@ class DummyTest {
     @Test
     public void testReadFile() throws IOException {
         // Read file
-        Path pathName = Path.of("tests/cred-hashed.txt");
+        Path pathName = Path.of("data/cred-hashed.txt");
         String actual = Files.readString(pathName);
 
         // Separate records
