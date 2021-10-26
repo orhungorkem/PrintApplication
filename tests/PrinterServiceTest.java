@@ -18,8 +18,21 @@ class PrinterServiceTest {
         result = service.authenticate("user-5", "what?");
         Assertions.assertFalse(result);
 
+        // Fake assertions
+        var a = 'a';
+        Assertions.assertEquals(a, 'a');
+    }
+
+    @Test
+    public void testCheckUsername() throws RemoteException {
+        service = new PrinterService();
+
+        // Correct pass
+        var result = service.checkUsername("user-5");
+        Assertions.assertTrue(result);
+
         // No user found
-        result = service.authenticate("user-who?", "password-5");
+        result = service.checkUsername("user-who?");
         Assertions.assertFalse(result);
 
         // Fake assertions

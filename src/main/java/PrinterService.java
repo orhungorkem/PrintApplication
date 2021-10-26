@@ -176,44 +176,20 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         var b = actual.split("\r\n");
 
         // Get username and password
-        String[] credentials = null;
         for (int i = 0; i < b.length; i++) {
             var item = b[i];
             var arguments = item.split(",");
-
-            // Check user exists
             if (username.equals(arguments[0])) {
-                credentials = arguments;
-                break;
+                // Hash password
+                var saltedPass = this.saltPassword(password, username);
+                var passHashed = "" + saltedPass.hashCode();
+
+                // Authenticate user password
+                if (passHashed.equals(arguments[1])) {
+                    // Password is authenticated
+                    return true;
+                }
             }
-        }
-
-        // Stop if user was not found
-        if (credentials == null) {
-            // No user found
-            return false;
-        }
-
-        // Initialize session
-        int newId = this.getSessionIdCounter() + 1;
-        SessionObject session = new SessionObject(newId, username, false);
-        this.incrSessionIdCounter();
-
-        // Set current session
-        this.setCurrentSession(session);
-
-        // Hash password
-        var saltedPass = this.saltPassword(password, username);
-        var passHashed = "" + saltedPass.hashCode();
-
-        // Authenticate user password
-        if (passHashed.equals(credentials[1])) {
-            // Set current session as authenticated
-            session.setAuthenticated(true);
-            this.setCurrentSession(session);
-
-            // Password is authenticated
-            return true;
         }
 
         // Password is not authenticated
@@ -222,9 +198,29 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     @Override
     public boolean checkUsername(String username) throws RemoteException {
+        Path pathName = Path.of("data/cred-hashed.txt");
+        String actual = "";
+        try {
+            actual = Files.readString(pathName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        //check that username is in database
-        return true;
+        // Separate records
+        var b = actual.split("\r\n");
+
+        // Get username and password
+        for (int i = 0; i < b.length; i++) {
+            var item = b[i];
+            var arguments = item.split(",");
+
+            // Check user exists
+            if (username.equals(arguments[0])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public SessionObject getCurrentSession() {
