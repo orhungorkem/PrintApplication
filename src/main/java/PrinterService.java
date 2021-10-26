@@ -183,13 +183,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         for (int i = 0; i < b.length; i++) {
             var item = b[i];
             var arguments = item.split(",");
-            if (username.equals(arguments[0])) {
+            if (username.equals(arguments[1])) {
                 // Hash password
-                var saltedPass = this.saltPassword(password, username);
+                var saltedPass = this.saltPassword(password, arguments[0]);
                 var passHashed = "" + saltedPass.hashCode();
 
                 // Authenticate user password
-                if (passHashed.equals(arguments[1])) {
+                if (passHashed.equals(arguments[2])) {
                     // Password is authenticated
                     return true;
                 }
@@ -219,7 +219,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             var arguments = item.split(",");
 
             // Check user exists
-            if (username.equals(arguments[0])) {
+            if (username.equals(arguments[1])) {
                 return true;
             }
         }
@@ -248,10 +248,10 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             for (int i = 0; i < b.length; i++) {
                 var item = b[i];
                 var arguments = item.split(",");
-                if (username.equals(arguments[0])) {
+                if (username.equals(arguments[1])) {
                     switch(parameter) {
                         case "username":
-                            response += "Username: " + arguments[0] + "\n";
+                            response += "Username: " + arguments[1] + "\n";
                             break;
                         default:
                             response = "There is no configuration parameter with the name: " + parameter + "\n";
@@ -291,18 +291,18 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             for (int i = 0; i < b.length; i++) {
                 var item = b[i];
                 var arguments = item.split(",");
-                if (username.equals(arguments[0])) {
+                if (username.equals(arguments[1])) {
                     switch(parameter) {
                         case "password":
-                            var pass = value + "--user-5";
+                            var pass = this.saltPassword(value, arguments[0]);
                             var pwHashed = pass.hashCode();
-                            item = "user-" + i + "," + pwHashed;
-                            response = "There parameter with the name: " + parameter + "is updated \n";
+                            item = "" + arguments[0] + "," + username + "," + pwHashed;
+                            response = "" + parameter + "is updated \n";
                             break;
                         case "username":
-                            item = "" + value + "," + arguments[1];
+                            item = "" + arguments[0] + ","  + value + "," + arguments[2];
                             this.currentSession.setUsername(value);
-                            response = "There parameter with the name: " + parameter + " is updated \n";
+                            response = "" + parameter + " is updated \n";
                             break;
                         default:
                             response = "There is no configuration parameter with the name: " + parameter + "\n";

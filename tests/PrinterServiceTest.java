@@ -11,11 +11,11 @@ class PrinterServiceTest {
         service = new PrinterService();
 
         // Correct pass
-        var result = service.authenticate("user-5", "password-5");
+        var result = service.checkPassword("user-5", "password-5");
         Assertions.assertTrue(result);
 
         // Wrong pass
-        result = service.authenticate("user-5", "what?");
+        result = service.checkPassword("user-5", "what?");
         Assertions.assertFalse(result);
 
         // Fake assertions
@@ -68,14 +68,14 @@ class PrinterServiceTest {
 
         // Read config
         var result = service.setConfig("username", "user-5-wow");
-        Assertions.assertEquals("There parameter with the name: username is updated \n" , result);
+        Assertions.assertEquals("username is updated \n" , result);
 
         result = service.readConfig("username");
         Assertions.assertEquals("Username: user-5-wow\n" , result);
 
         // Roll back changes
         result = service.setConfig("username", "user-5");
-        Assertions.assertEquals("There parameter with the name: username is updated \n" , result);
+        Assertions.assertEquals("username is updated \n" , result);
 
         result = service.readConfig("username");
         Assertions.assertEquals("Username: user-5\n" , result);
