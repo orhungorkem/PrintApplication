@@ -17,9 +17,9 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         this.printers= new HashMap<>();
         this.sessionIdCounter = 0;   //this needs to be incremented in each session creation!!!
         this.currentSession = null;
-        this.printers.put("Printer 1",new PrinterObject("Printer 1"));
-        this.printers.put("Printer 2",new PrinterObject("Printer 2"));
-        this.printers.put("Printer 3",new PrinterObject("Printer 3"));
+        this.printers.put("Printer1",new PrinterObject("Printer1"));
+        this.printers.put("Printer2",new PrinterObject("Printer2"));
+        this.printers.put("Printer3",new PrinterObject("Printer3"));
     }
 
     private Map<String, PrinterObject> printers;  //service should access to the printers
@@ -34,10 +34,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String print(String filename, String printer, String username){
+    public String print(String filename, String printer){
         if(currentSession!=null && currentSession.isAuthenticated()) {
             PrinterObject current = this.printers.get(printer);
-            JobObject job = new JobObject(filename, current.getJobCounter(), username);
+            if(current == null){
+                return "Printer not found.";
+            }
+            JobObject job = new JobObject(filename, current.getJobCounter(), this.currentSession.getUsername());
             current.incrementJobCounter();
             current.getJobs().add(job);
             return "Print job is added to queue.";
@@ -116,7 +119,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         else{
             return "Username does not exist.";
         }
-        if(authenticate(username, password)){
+        if(checkPassword(username, password)){
             this.currentSession.setAuthenticated(true);  //now authenticated
             return "Authentication completed.";
         }
@@ -163,7 +166,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public boolean authenticate(String username, String password) throws RemoteException {
+    public boolean checkPassword(String username, String password) throws RemoteException {
         Path pathName = Path.of("data/cred-hashed.txt");
         String actual = "";
         try {

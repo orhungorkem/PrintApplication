@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class Client {
 
-    public void printMenu(){
+    public static void printMenu(){
         //the menu with available options
         System.out.println("-------------Menu--------------");
         System.out.println("Press 1 to print");
@@ -15,13 +15,14 @@ public class Client {
         System.out.println("Press 4 to restart server");
         System.out.println("Press 5 to stop server");
         System.out.println("Press 6 to see printer status");
+        System.out.println("Press 9 to turn off");
         System.out.println("Press 0 to Authenticate");
         //may add read config set config
 
     }
 
 
-    public void loginMenu(Scanner in, Printer printServer) throws RemoteException {
+    public static void loginMenu(Scanner in, Printer printServer) throws RemoteException {
         System.out.print("Username: ");
         String username = in.next();
         System.out.print("Password: ");
@@ -39,14 +40,59 @@ public class Client {
 
 
 
-
-        boolean on = true;
-
-        System.out.print("Enter a string: ");
-        String str= in.nextLine();
-
-        while(on){
-            break;
+        while(true){
+            printMenu();
+            String choice = in.next();
+            if(choice.equals("0")) {
+                loginMenu(in, printServer);
+            }
+            else if(choice.equals("1")){
+                System.out.print("Printer name: ");
+                String printer = in.next();
+                System.out.println("");
+                System.out.print("File name: ");
+                String filename = in.next();
+                System.out.println("");
+                String response = printServer.print(filename,printer);
+                System.out.println(response);
+            }
+            else if(choice.equals("2")){
+                System.out.print("Printer name: ");
+                String printer = in.next();
+                System.out.println("");
+                String response = printServer.queue(printer);
+                System.out.println(response);
+            }
+            else if(choice.equals("3")){
+                System.out.print("Printer name: ");
+                String printer = in.next();
+                System.out.println("");
+                System.out.print("Job id: ");
+                int job = in.nextInt();
+                System.out.println("");
+                String response = printServer.topQueue(printer,job);
+                System.out.println(response);
+            }
+            else if(choice.equals("4")){
+                String response = printServer.restart();
+                System.out.println(response);
+            }
+            else if(choice.equals("5")){
+                String response = printServer.stop();
+                System.out.println(response);
+            }
+            else if(choice.equals("6")){
+                System.out.print("Printer name: ");
+                String printer = in.next();
+                System.out.println("");
+                String response = printServer.status(printer);
+                System.out.println(response);
+            }
+            else{
+                System.out.println("Turning off...");
+                break;
+            }
+            //break;
 
             //we need to fill this part
 
@@ -55,20 +101,5 @@ public class Client {
 
 
 
-
-        /*
-        printServer.start("user 1","mock_password");
-        System.out.println(printServer.print("aaaa","Printer 1","user 1"));
-        printServer.print("bbbb","Printer 1","user 1");
-        printServer.print("aaaa","Printer 1","user 2");
-        printServer.print("bbbb","Printer 1","user 1");
-        System.out.println(printServer.topQueue("Printer 1",12));
-        System.out.println(printServer.queue("Printer 1"));
-
-        System.out.println(printServer.queue("Printer 1","user 1"));
-        System.out.println(printServer.status("Printer 1"));
-        System.out.println(printServer.restart());
-        System.out.println(printServer.queue("Printer 1","user 1"));
-        */
     }
 }
