@@ -15,6 +15,8 @@ public class Client {
         System.out.println("Press 4 to restart server");
         System.out.println("Press 5 to stop server");
         System.out.println("Press 6 to see printer status");
+        System.out.println("Press 7 to see a user configuration parameter");
+        System.out.println("Press 8 to edit a user configuration parameter");
         System.out.println("Press 9 to turn off");
         System.out.println("Press 0 to Authenticate");
         //may add read config set config
@@ -86,6 +88,22 @@ public class Client {
                 String printer = in.next();
                 System.out.println("");
                 String response = printServer.status(printer);
+                System.out.println(response);
+            }
+            else if(choice.equals("7")){
+                System.out.print("Type the parameter name: ");
+                String parameter = in.next();
+                System.out.println("");
+                String response = printServer.readConfig(parameter);
+                System.out.println(response);
+            }
+            else if(choice.equals("8")){
+                System.out.print("Type the parameter name: ");
+                String parameter = in.next();
+                System.out.print("Type the parameter value: ");
+                String value = in.next();
+                System.out.println("");
+                String response = printServer.setConfig(parameter, value);
                 System.out.println(response);
             }
             else{
