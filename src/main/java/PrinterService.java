@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.FileWriter;
 
@@ -19,9 +21,9 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         this.printers= new HashMap<>();
         this.sessionIdCounter = 0;   //this needs to be incremented in each session creation!!!
         this.currentSession = null;
-        this.printers.put("Printer1",new PrinterObject("Printer1"));
-        this.printers.put("Printer2",new PrinterObject("Printer2"));
-        this.printers.put("Printer3",new PrinterObject("Printer3"));
+        this.printers.put("Printer1", new PrinterObject("Printer1"));
+        this.printers.put("Printer2", new PrinterObject("Printer2"));
+        this.printers.put("Printer3", new PrinterObject("Printer3"));
     }
 
     private Map<String, PrinterObject> printers;  //service should access to the printers
@@ -38,9 +40,16 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     @Override
     public String print(String filename, String printer){
         if(currentSession!=null && currentSession.isAuthenticated()) {
+            // Log action
+            try {
+                this.log(currentSession.getUsername(), "print");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             PrinterObject current = this.printers.get(printer);
-            if(current == null){
-                return "Printer not found.";
+            if (current == null){
+                return "Printer not found. Try Printer1 or Printer2 or Printer3";
             }
             JobObject job = new JobObject(filename, current.getJobCounter(), this.currentSession.getUsername());
             current.incrementJobCounter();
@@ -54,9 +63,17 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     @Override
     public String queue(String printer) throws RemoteException {
-
         if(currentSession!=null && currentSession.isAuthenticated()) {
+            // Log action
+            try {
+                this.log(currentSession.getUsername(), "queue");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             PrinterObject current = this.printers.get(printer);
+            if (current == null){
+                return "Printer not found. Try Printer1 or Printer2 or Printer3";
+            }
             List<JobObject> jobs = current.getJobs();
             String response = "Print Queue for "+printer+"\n";
             for (int i = 0; i < jobs.size(); i++) {
@@ -72,13 +89,22 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     @Override
     public String topQueue(String printer, int job) throws RemoteException {
-
         //put the job to the top of "user's queue"
         if(currentSession==null || !currentSession.isAuthenticated()){
             return "You do not have access to print server.";
         }
 
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "topQueue");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         PrinterObject p = this.printers.get(printer);
+        if (p == null){
+            return "Printer not found. Try Printer1 or Printer2 or Printer3";
+        }
+
         List<JobObject> jobs = p.getJobs();
         List<JobObject> userJobs = new LinkedList<>();
         List<Integer> indices = new LinkedList<>();
@@ -105,13 +131,10 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             jobs.set(indices.get(i), userJobs.get(i));
         }
         return "Job "+job+" moved to top of the queue.";
-
-
     }
 
     @Override
     public String start(String username, String password) throws RemoteException{
-
         //gets user info and assigns session object to current session
         if(checkUsername(username)){  //if username is recorded, create session
             SessionObject session = new SessionObject(this.sessionIdCounter,username,false);  //not authenticated yet
@@ -120,6 +143,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         }
         else{
             return "Username does not exist.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "start");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         if(checkPassword(username, password)){
             this.currentSession.setAuthenticated(true);  //now authenticated
@@ -130,6 +160,16 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     @Override
     public String stop() throws RemoteException {
+        if (currentSession==null || !currentSession.isAuthenticated()){
+            return "You do not have access to print server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "stop");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         //make session object null
         this.currentSession = null;
         return "Session ended.";
@@ -138,8 +178,14 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     @Override
     public String restart() throws RemoteException{
         //empty the queue for the relevant user
-        //make current session null and assign it to a neww session
+        //make current session null and assign it to a new session
         if(currentSession!=null && currentSession.isAuthenticated()) {
+            // Log action
+            try {
+                this.log(currentSession.getUsername(), "restart");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             for (String name : printers.keySet()) {
                 PrinterObject printer = printers.get(name);
                 List<JobObject> jobs = printer.getJobs();
@@ -155,14 +201,26 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             return "Restarting session.";
         }
         return "You do not have access to print server.";
-
-
     }
 
     @Override
     public String status(String printer) throws RemoteException {
         //show printer metadata (name and number of jobs in the queue)
+        if (currentSession==null || !currentSession.isAuthenticated()){
+            return "You do not have access to print server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "status");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         PrinterObject p = this.printers.get(printer);
+        if (p == null){
+            return "Printer not found. Try Printer1 or Printer2 or Printer3";
+        }
+
         return "Name: "+printer+"\n"+"Number of jobs in queue: "+p.getJobs().size()+"\n";
     }
 
@@ -194,6 +252,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
                     return true;
                 }
             }
+        }
+
+        // Log action
+        try {
+            this.log(username, "Wrong Password");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         // Password is not authenticated
@@ -230,6 +295,12 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     @Override
     public String readConfig(String parameter) throws RemoteException {
         if (currentSession != null && currentSession.isAuthenticated()) {
+            // Log action
+            try {
+                this.log(currentSession.getUsername(), "readConfig");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Get username from session
             var username = currentSession.getUsername();
 
@@ -268,6 +339,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     @Override
     public String setConfig(String parameter, String value) throws RemoteException {
         if (currentSession != null && currentSession.isAuthenticated()) {
+            // Log action
+            try {
+                this.log(currentSession.getUsername(), "setConfig");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             // Get username from session
             var username = currentSession.getUsername();
 
@@ -332,10 +410,19 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         }
 
         return "You do not have access to the user configuration.";
-
     }
 
     public String saltPassword(String password, String salt) {
         return password + "--" + salt;
+    }
+
+    public String log(String username, String functionName) throws IOException {
+        // Enable write mode for log file
+        var writer = new FileWriter("data/log.txt", true);
+        var item = "User: " + username + ", Action: " + functionName + ", Timestamp: "+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        writer.write("" + item + "\r\n");
+        writer.close();
+
+        return item;
     }
 }

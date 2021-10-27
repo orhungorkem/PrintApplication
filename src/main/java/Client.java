@@ -5,7 +5,6 @@ import java.rmi.RemoteException;
 import java.util.Scanner;
 
 public class Client {
-
     public static void printMenu(){
         //the menu with available options
         System.out.println("-------------Menu--------------");
@@ -19,29 +18,20 @@ public class Client {
         System.out.println("Press 8 to edit a user configuration parameter");
         System.out.println("Press 9 to turn off");
         System.out.println("Press 0 to Authenticate");
-        //may add read config set config
-
     }
-
 
     public static void loginMenu(Scanner in, Printer printServer) throws RemoteException {
         System.out.print("Username: ");
         String username = in.next();
         System.out.print("Password: ");
         String password = in.next();
-
         System.out.println(printServer.start(username,password));
 
     }
 
     public static void main(String [] args) throws MalformedURLException, NotBoundException, RemoteException {
-
         Scanner in = new Scanner(System.in);
-
         Printer printServer = (Printer) Naming.lookup("rmi://localhost:3099/printer");
-
-
-
         while(true){
             printMenu();
             String choice = in.next();
@@ -106,18 +96,12 @@ public class Client {
                 String response = printServer.setConfig(parameter, value);
                 System.out.println(response);
             }
-            else{
+            else  if (choice.equals("9")){
                 System.out.println("Turning off...");
                 break;
+            } else {
+                System.out.println("Printer server is confused O_O ... Please try again by pressing a number from the above list of actions.");
             }
-            //break;
-
-            //we need to fill this part
-
-
         }
-
-
-
     }
 }
