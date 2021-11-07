@@ -28,18 +28,19 @@ Default printer names:
 
 Format for acl:
 
-<username> binary string
+username binary string
 
-binary string consists of 9 characters where each of them shows a job
-print 1
-queue 2
-topqueue 3
-start 4
-stop 5
-restart 6
-status 7
-see config 8
-set config 9
+binary string consists of 9 characters where each of them shows a job  
 
-so let b the binary string for user j.
+print 1  
+queue 2  
+topqueue 3  
+start 4  
+stop 5  
+restart 6  
+status 7  
+see config 8  
+set config 9  
+
+so let b the binary string for user j.  
 then if b[0]=='1' then j is authorized to print, else not.
