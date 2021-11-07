@@ -1,4 +1,8 @@
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -29,7 +33,11 @@ public class Client {
 
     }
 
-    public static void main(String [] args) throws MalformedURLException, NotBoundException, RemoteException {
+
+
+    public static void main(String [] args) throws IOException, NotBoundException {
+
+
         Scanner in = new Scanner(System.in);
         Printer printServer = (Printer) Naming.lookup("rmi://localhost:3099/printer");
         while(true){
@@ -102,6 +110,13 @@ public class Client {
             } else {
                 System.out.println("Printer server is confused O_O ... Please try again by pressing a number from the above list of actions.");
             }
+
+
+
         }
+
+
+
+
     }
 }

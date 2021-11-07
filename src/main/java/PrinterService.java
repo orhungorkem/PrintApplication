@@ -38,8 +38,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String print(String filename, String printer){
+    public String print(String filename, String printer) throws IOException {
         if(currentSession!=null && currentSession.isAuthenticated()) {
+
+            if(!this.authorize(currentSession.getUsername(), 1)){
+                return "You are not authorized for this job.";
+            }
+
             // Log action
             try {
                 this.log(currentSession.getUsername(), "print");
@@ -62,8 +67,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String queue(String printer) throws RemoteException {
+    public String queue(String printer) throws IOException {
         if(currentSession!=null && currentSession.isAuthenticated()) {
+
+            if(!this.authorize(currentSession.getUsername(), 2)){
+                return "You are not authorized for this job.";
+            }
+
             // Log action
             try {
                 this.log(currentSession.getUsername(), "queue");
@@ -88,10 +98,14 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String topQueue(String printer, int job) throws RemoteException {
+    public String topQueue(String printer, int job) throws IOException {
         //put the job to the top of "user's queue"
         if(currentSession==null || !currentSession.isAuthenticated()){
             return "You do not have access to print server.";
+        }
+
+        if(!this.authorize(currentSession.getUsername(), 3)){
+            return "You are not authorized for this job.";
         }
 
         // Log action
@@ -133,6 +147,8 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         return "Job "+job+" moved to top of the queue.";
     }
 
+
+    //THINK ABOUT THIS, WE EXECUTE START FOR EVERYONE???
     @Override
     public String start(String username, String password) throws RemoteException{
         //gets user info and assigns session object to current session
@@ -158,6 +174,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         return "Wrong password.";
     }
 
+    //THINK ABOUT THIS, WE EXECUTE START FOR EVERYONE???
     @Override
     public String stop() throws RemoteException {
         if (currentSession==null || !currentSession.isAuthenticated()){
@@ -176,10 +193,16 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String restart() throws RemoteException{
+    public String restart() throws IOException {
         //empty the queue for the relevant user
         //make current session null and assign it to a new session
         if(currentSession!=null && currentSession.isAuthenticated()) {
+
+            if(!this.authorize(currentSession.getUsername(), 6)){
+                return "You are not authorized for this job.";
+            }
+
+
             // Log action
             try {
                 this.log(currentSession.getUsername(), "restart");
@@ -204,10 +227,14 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String status(String printer) throws RemoteException {
+    public String status(String printer) throws IOException {
         //show printer metadata (name and number of jobs in the queue)
         if (currentSession==null || !currentSession.isAuthenticated()){
             return "You do not have access to print server.";
+        }
+
+        if(!this.authorize(currentSession.getUsername(), 7)){
+            return "You are not authorized for this job.";
         }
 
         // Log action
@@ -293,8 +320,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String readConfig(String parameter) throws RemoteException {
+    public String readConfig(String parameter) throws IOException {
         if (currentSession != null && currentSession.isAuthenticated()) {
+
+            if(!this.authorize(currentSession.getUsername(), 8)){
+                return "You are not authorized for this job.";
+            }
+
             // Log action
             try {
                 this.log(currentSession.getUsername(), "readConfig");
@@ -337,8 +369,13 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String setConfig(String parameter, String value) throws RemoteException {
+    public String setConfig(String parameter, String value) throws IOException {
         if (currentSession != null && currentSession.isAuthenticated()) {
+
+            if(!this.authorize(currentSession.getUsername(), 9)){
+                return "You are not authorized for this job.";
+            }
+
             // Log action
             try {
                 this.log(currentSession.getUsername(), "setConfig");
@@ -415,6 +452,36 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public String saltPassword(String password, String salt) {
         return password + "--" + salt;
     }
+
+
+
+    public boolean authorize(String username, int job) throws IOException {
+
+
+        Path pathName = Path.of("data/acl.txt");
+        String actual = Files.readString(pathName);
+        String[] lines = actual.split("\r\n");
+
+
+        for(int i = 0;i< lines.length;i++) {
+            String[] line = lines[i].split(" ");
+            String user = line[0];
+
+            if (user.equals(username)) {
+                String capabilities = line[1];
+                if (capabilities.charAt(job-1)==('1')) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        return false;   //user not found ?? this may not even be accessed
+    }
+
+
+
 
     public String log(String username, String functionName) throws IOException {
         // Enable write mode for log file
