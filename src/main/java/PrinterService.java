@@ -16,6 +16,22 @@ import java.util.*;
 import java.io.FileWriter;
 
 public class PrinterService extends UnicastRemoteObject implements Printer {
+    // Scope operations
+    static final int PRINT = 1;
+    static final int SEE_QUEUE = 2;
+    static final int TOP_QUEUE = 4;
+    static final int RESTART = 8;
+    static final int START = 16;
+    static final int STOP = 32;
+    static final int STATUS = 64;
+    static final int READ_CONFIG = 128;
+    static final int SET_CONFIG = 256;
+
+    // Server config
+    static boolean STOPPED = true;
+    static String COLOR = "black";
+    static String SCALE = "fit";
+
     public PrinterService() throws RemoteException {
         super();
         this.printers= new HashMap<>();
@@ -38,60 +54,76 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String print(String filename, String printer){
-        if(currentSession!=null && currentSession.isAuthenticated()) {
-            // Log action
-            try {
-                this.log(currentSession.getUsername(), "print");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            PrinterObject current = this.printers.get(printer);
-            if (current == null){
-                return "Printer not found. Try Printer1 or Printer2 or Printer3";
-            }
-            JobObject job = new JobObject(filename, current.getJobCounter(), this.currentSession.getUsername());
-            current.incrementJobCounter();
-            current.getJobs().add(job);
-            return "Print job is added to queue.";
-        }
-        else{
+    public String print(String filename, String printer) throws RemoteException {
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
             return "You do not have access to print server.";
         }
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), PRINT)){
+            return "Your role does not have permission to print.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "print");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        PrinterObject current = this.printers.get(printer);
+        if (current == null){
+            return "Printer not found. Try Printer1 or Printer2 or Printer3";
+        }
+        JobObject job = new JobObject(filename, current.getJobCounter(), this.currentSession.getUsername());
+        current.incrementJobCounter();
+        current.getJobs().add(job);
+        return "Print job is added to queue.";
     }
 
     @Override
     public String queue(String printer) throws RemoteException {
-        if(currentSession!=null && currentSession.isAuthenticated()) {
-            // Log action
-            try {
-                this.log(currentSession.getUsername(), "queue");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            PrinterObject current = this.printers.get(printer);
-            if (current == null){
-                return "Printer not found. Try Printer1 or Printer2 or Printer3";
-            }
-            List<JobObject> jobs = current.getJobs();
-            String response = "Print Queue for "+printer+"\n";
-            for (int i = 0; i < jobs.size(); i++) {
-                JobObject job = jobs.get(i);
-                if (job.getUsername().equals(this.currentSession.getUsername())) {
-                    response += job.getId() + " , " + job.getFilename()+"\n";
-                }
-            }
-            return response;
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
         }
-        return "You do not have access to print server.";
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), SEE_QUEUE)){
+            return "Your role does not have permission to see queue.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "queue");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        PrinterObject current = this.printers.get(printer);
+        if (current == null){
+            return "Printer not found. Try Printer1 or Printer2 or Printer3";
+        }
+        List<JobObject> jobs = current.getJobs();
+        String response = "Print Queue for "+printer+"\n";
+        for (int i = 0; i < jobs.size(); i++) {
+            JobObject job = jobs.get(i);
+            if (job.getUsername().equals(this.currentSession.getUsername())) {
+                response += job.getId() + " , " + job.getFilename()+"\n";
+            }
+        }
+        return response;
     }
 
     @Override
     public String topQueue(String printer, int job) throws RemoteException {
-        //put the job to the top of "user's queue"
-        if(currentSession==null || !currentSession.isAuthenticated()){
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
             return "You do not have access to print server.";
+        }
+
+        if (!checkRolePermission(currentSession.getUsername(), TOP_QUEUE)){
+            return "Your role does not have permission to top queue.";
         }
 
         // Log action
@@ -134,7 +166,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String start(String username, String password) throws RemoteException{
+    public String login(String username, String password) throws RemoteException{
         //gets user info and assigns session object to current session
         if(checkUsername(username)){  //if username is recorded, create session
             SessionObject session = new SessionObject(this.sessionIdCounter,username,false);  //not authenticated yet
@@ -159,7 +191,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
-    public String stop() throws RemoteException {
+    public String logout() throws RemoteException {
         if (currentSession==null || !currentSession.isAuthenticated()){
             return "You do not have access to print server.";
         }
@@ -176,38 +208,98 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
     @Override
+    public String start() throws RemoteException {
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()){
+            return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), START)){
+            return "Your role does not have permission to start server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "start");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Start server
+        STOPPED = false;
+
+        return "Print server started.";
+    }
+
+    @Override
+    public String stop() throws RemoteException {
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), STOP)){
+            return "Your role does not have permission to stop server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "stop");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Stop server
+        STOPPED = true;
+
+        return "Print server stopped.";
+    }
+
+    @Override
     public String restart() throws RemoteException{
-        //empty the queue for the relevant user
-        //make current session null and assign it to a new session
-        if(currentSession!=null && currentSession.isAuthenticated()) {
-            // Log action
-            try {
-                this.log(currentSession.getUsername(), "restart");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            for (String name : printers.keySet()) {
-                PrinterObject printer = printers.get(name);
-                List<JobObject> jobs = printer.getJobs();
-                Iterator<JobObject> i = jobs.iterator();
-                while (i.hasNext()) {
-                    JobObject job = i.next();
-                    if (job.getUsername().equals(this.currentSession.getUsername())) {  //job belongs to the current user
-                        i.remove();
-                    }
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), RESTART)){
+            return "Your role does not have permission to restart server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "restart");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for (String name : printers.keySet()) {
+            PrinterObject printer = printers.get(name);
+            List<JobObject> jobs = printer.getJobs();
+            Iterator<JobObject> i = jobs.iterator();
+            while (i.hasNext()) {
+                JobObject job = i.next();
+                if (job.getUsername().equals(this.currentSession.getUsername())) {  //job belongs to the current user
+                    i.remove();
                 }
             }
-            this.currentSession = new SessionObject(this.sessionIdCounter, this.currentSession.getUsername(), true);
-            return "Restarting session.";
         }
-        return "You do not have access to print server.";
+
+        return "Print server restarted.";
     }
 
     @Override
     public String status(String printer) throws RemoteException {
-        //show printer metadata (name and number of jobs in the queue)
-        if (currentSession==null || !currentSession.isAuthenticated()){
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
             return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), STATUS)){
+            return "Your role does not have permission to see server status.";
         }
 
         // Log action
@@ -216,6 +308,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         PrinterObject p = this.printers.get(printer);
         if (p == null){
             return "Printer not found. Try Printer1 or Printer2 or Printer3";
@@ -294,135 +387,131 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     @Override
     public String readConfig(String parameter) throws RemoteException {
-        if (currentSession != null && currentSession.isAuthenticated()) {
-            // Log action
-            try {
-                this.log(currentSession.getUsername(), "readConfig");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            // Get username from session
-            var username = currentSession.getUsername();
-
-            // Read credential file
-            Path pathName = Path.of("data/cred-hashed.txt");
-            String actual = "";
-            try {
-                actual = Files.readString(pathName);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Get username and password
-            String response = "";
-            var b = actual.split("\r\n");
-            for (int i = 0; i < b.length; i++) {
-                var item = b[i];
-                var arguments = item.split(",");
-                if (username.equals(arguments[1])) {
-                    switch(parameter) {
-                        case "username":
-                            response += "Username: " + arguments[1] + "\n";
-                            break;
-                        default:
-                            response = "There is no configuration parameter with the name: " + parameter + "\n";
-                    }
-
-                    return response;
-                }
-            }
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
         }
 
-        return "You do not have access to the user configuration.";
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), READ_CONFIG)){
+            return "Your role does not have permission to read configuration.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "readConfig");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String response = "";
+        if (parameter.equals("color")){
+            response = "Parameter: " + parameter + " has value: " + COLOR;
+        } else if (parameter.equals("scale")){
+            response = "Parameter: " + parameter + " has value: " + SCALE;
+        } else {
+            response = "No parameter found.";
+        }
+
+        return response;
     }
 
     @Override
     public String setConfig(String parameter, String value) throws RemoteException {
-        if (currentSession != null && currentSession.isAuthenticated()) {
-            // Log action
-            try {
-                this.log(currentSession.getUsername(), "setConfig");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Get username from session
-            var username = currentSession.getUsername();
-
-            // Read credential file
-            Path pathName = Path.of("data/cred-hashed.txt");
-            String actual = "";
-            FileWriter writer = null;
-            try {
-                // Get file
-                actual = Files.readString(pathName);
-
-                // Create temp file
-                writer = new FileWriter("data/cred-hashed-temp.txt", true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Get username and password
-            String response = "";
-            var b = actual.split("\r\n");
-            for (int i = 0; i < b.length; i++) {
-                var item = b[i];
-                var arguments = item.split(",");
-                if (username.equals(arguments[1])) {
-                    switch(parameter) {
-                        case "password":
-                            var pass = this.saltPassword(value, arguments[0]);
-                            var pwHashed = pass.hashCode();
-                            item = "" + arguments[0] + "," + username + "," + pwHashed;
-                            response = "" + parameter + "is updated \n";
-                            break;
-                        case "username":
-                            item = "" + arguments[0] + ","  + value + "," + arguments[2];
-                            this.currentSession.setUsername(value);
-                            response = "" + parameter + " is updated \n";
-                            break;
-                        default:
-                            response = "There is no configuration parameter with the name: " + parameter + "\n";
-                    }
-                }
-
-                // Write to temp file
-                try {
-                    writer.write("" + item + "\r\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            // Close write mode
-            try {
-                writer.close();
-                Path oldSource = Paths.get("data/cred-hashed.txt");
-                Path newSource = Paths.get("data/cred-hashed-temp.txt");
-                Files.delete(oldSource);
-                Files.move(newSource, newSource.resolveSibling("cred-hashed.txt"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return response;
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
         }
 
-        return "You do not have access to the user configuration.";
+        // Check role permissions
+        if (!checkRolePermission(currentSession.getUsername(), SET_CONFIG)){
+            return "Your role does not have permission to set configuration.";
+        }
+
+        String response = "";
+        if (parameter.equals("color")){
+            COLOR = value;
+            response = "Parameter: " + parameter + " is updated.";
+        } else if (parameter.equals("scale")){
+            SCALE = value;
+            response = "Parameter: " + parameter + " is updated.";
+        } else {
+            response = "No parameter found.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "setConfig");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return response;
     }
 
     public String saltPassword(String password, String salt) {
         return password + "--" + salt;
     }
 
-    public String log(String username, String functionName) throws IOException {
+    public void log(String username, String functionName) throws IOException {
         // Enable write mode for log file
         var writer = new FileWriter("data/log.txt", true);
         var item = "User: " + username + ", Action: " + functionName + ", Timestamp: "+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         writer.write("" + item + "\r\n");
         writer.close();
+    }
 
-        return item;
+    public boolean checkRolePermission(String username, Integer scope) {
+        try {
+            // Step 1. Get assigned role to the username
+            Path pathUserRoles = Path.of("data/user-roles.txt");
+            String roleFile = Files.readString(pathUserRoles);
+
+            // Separate records
+            var roles = roleFile.split("\r\n");
+
+            // Get username role
+            var role = "";
+            for (int i = 0; i < roles.length; i++) {
+                var item = roles[i];
+                var arguments = item.split(",");
+                if (username.equals(arguments[0])) {
+                    role = arguments[1];
+                }
+            }
+
+            // Step 2. Get assigned permissions to the role
+            Path pathRolePermissions = Path.of("data/role-permissions.txt");
+            String permissionFile = Files.readString(pathRolePermissions);
+
+            // Separate records
+            var permissions = permissionFile.split("\r\n");
+
+            // Get username role
+            var permission = 0;
+            for (int i = 0; i < permissions.length; i++) {
+                var item = permissions[i];
+                var arguments = item.split(",");
+                if (role.equals(arguments[0])) {
+                    try {
+                        permission = Integer.parseInt(arguments[1]);
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            // Step 3. Check that role_permissions AND operation_scope should be equal to operation_scope
+            return (permission & scope) == scope;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isPrintServerStopped() throws RemoteException{
+        return STOPPED;
     }
 }
