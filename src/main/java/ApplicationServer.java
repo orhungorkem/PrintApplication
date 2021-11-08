@@ -6,6 +6,6 @@ public class ApplicationServer {
 
     public static void main(String[] args) throws RemoteException {
         Registry registry = LocateRegistry.createRegistry(3099);
-        registry.rebind("printer",new PrinterService());
+        registry.rebind("printer", new PrinterService());
     }
 }

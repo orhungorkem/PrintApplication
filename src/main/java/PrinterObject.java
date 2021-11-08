@@ -11,8 +11,6 @@ public class PrinterObject implements Serializable {
     private List<JobObject> jobs;  //queue for the jobs
     private int jobCounter;  //determines the id to give to the new job
 
-
-
     public PrinterObject(String name) {
         this.name = name;
         this.jobs = new LinkedList<>();
@@ -27,7 +25,7 @@ public class PrinterObject implements Serializable {
         return jobCounter;
     }
 
-    public void incrementJobCounter() { //increments coutner after each print
+    public void incrementJobCounter() { //increments counter after each print
         this.jobCounter++;
     }
 
