@@ -45,7 +45,7 @@ class PrinterServiceTest {
         service = new PrinterService();
 
         // Open session
-        service.start("user-5", "password-5");
+        service.login("user-5", "password-5");
 
         // Read config
         var result = service.readConfig("username");
@@ -64,7 +64,7 @@ class PrinterServiceTest {
         service = new PrinterService();
 
         // Open session
-        service.start("user-5", "password-5");
+        service.login("user-5", "password-5");
 
         // Read config
         var result = service.setConfig("username", "user-5-wow");

@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.testng.Assert;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +27,21 @@ class DummyTest {
 
             // Append credential to file
             writer.write("" + i + ",user-" + i + "," + pwHashed + "\r\n");
+        }
+
+        // Create cred for users with roles
+        String users[]={"Alice","Bob", "Cecilia", "David", "Erica", "Fred", "George"};
+        for (int i = 0; i < 7; i++) {
+            // Add salt to password
+            var id = i + 10;
+            System.out.println(id);
+            var pw = "password-" + users[i] + "--" + id;
+
+            // Hash password
+            var pwHashed = pw.hashCode();
+
+            // Append credential to file
+            writer.write("" + id + "," + users[i] +  "," + pwHashed + "\r\n");
         }
 
         // Close write mode
@@ -121,6 +138,34 @@ class DummyTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // Fake assertions
+        var a = 'a';
+        Assertions.assertEquals(a, 'a');
+    }
+
+    @Test
+    public void testBinaryOperation() {
+        // Power user - has permissions for the restart scope
+        var role_3 = 15;
+        var scope_restart = 8;
+        var result = role_3 & scope_restart;
+        Assert.assertEquals(scope_restart, result);
+        System.out.println(result);
+
+        // Ordinary user - does not have permission for readConfig scope
+        var role_0 = 3;
+        var scope_readConfig = 128;
+        result = role_0 & scope_readConfig;
+        Assert.assertNotEquals(scope_readConfig, result);
+        System.out.println(result);
+
+        // Server manager - has permissions for the setConfig scope
+        var role_1 = 511;
+        var scope_setConfig = 256;
+        result = role_1 & scope_setConfig;
+        Assert.assertEquals(scope_setConfig, result);
+        System.out.println(result);
 
         // Fake assertions
         var a = 'a';
