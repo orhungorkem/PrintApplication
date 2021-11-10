@@ -32,6 +32,20 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
     private SessionObject currentSession;  //keeps the current session
 
+    static boolean STOPPED = true;
+    static String COLOR = "black";
+    static String SCALE = "fit";
+
+    static final int PRINT = 1;
+    static final int SEE_QUEUE = 2;
+    static final int TOP_QUEUE = 3;
+    static final int RESTART = 6;
+    static final int START = 4;
+    static final int STOP = 5;
+    static final int STATUS = 7;
+    static final int READ_CONFIG = 8;
+    static final int SET_CONFIG = 9;
+
     @Override
     public Map<String, PrinterObject> getPrinters(){
         return this.printers;
@@ -148,9 +162,36 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     }
 
 
-    //THINK ABOUT THIS, WE EXECUTE START FOR EVERYONE???
+
     @Override
-    public String start(String username, String password) throws RemoteException{
+    public String start() throws IOException {
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()){
+            return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!this.authorize(currentSession.getUsername(), 4)){
+            return "Your role does not have permission to start server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "start");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Start server
+        STOPPED = false;
+
+        return "Print server started.";
+    }
+
+
+
+    @Override
+    public String login(String username, String password) throws RemoteException{
         //gets user info and assigns session object to current session
         if(checkUsername(username)){  //if username is recorded, create session
             SessionObject session = new SessionObject(this.sessionIdCounter,username,false);  //not authenticated yet
@@ -174,9 +215,37 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         return "Wrong password.";
     }
 
-    //THINK ABOUT THIS, WE EXECUTE START FOR EVERYONE???
+
+
+
+
     @Override
-    public String stop() throws RemoteException {
+    public String stop() throws IOException {
+        // Check user authentication
+        if (currentSession==null || !currentSession.isAuthenticated()) {
+            return "You do not have access to print server.";
+        }
+
+        // Check role permissions
+        if (!authorize(currentSession.getUsername(), 5)){
+            return "Your role does not have permission to stop server.";
+        }
+
+        // Log action
+        try {
+            this.log(currentSession.getUsername(), "stop");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Stop server
+        STOPPED = true;
+
+        return "Print server stopped.";
+    }
+
+    @Override
+    public String logout() throws RemoteException {
         if (currentSession==null || !currentSession.isAuthenticated()){
             return "You do not have access to print server.";
         }
@@ -191,6 +260,8 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         this.currentSession = null;
         return "Session ended.";
     }
+
+
 
     @Override
     public String restart() throws IOException {
@@ -492,4 +563,12 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
 
         return item;
     }
+
+
+
+    @Override
+    public boolean isPrintServerStopped() throws RemoteException{
+        return STOPPED;
+    }
+
 }

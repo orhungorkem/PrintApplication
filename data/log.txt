@@ -34,3 +34,11 @@ User: user-1, Action: start, Timestamp: 2021-11-07 13:57:32
 User: user-1, Action: queue, Timestamp: 2021-11-07 13:57:36
 User: user-1, Action: readConfig, Timestamp: 2021-11-07 13:58:36
 User: user-2, Action: start, Timestamp: 2021-11-07 13:58:51
+User: Erica, Action: start, Timestamp: 2021-11-10 21:13:35
+User: Erica, Action: stop, Timestamp: 2021-11-10 21:13:45
+User: Alice, Action: start, Timestamp: 2021-11-10 21:14:09
+User: Alice, Action: start, Timestamp: 2021-11-10 21:14:13
+User: Erica, Action: start, Timestamp: 2021-11-10 21:14:27
+User: Erica, Action: print, Timestamp: 2021-11-10 21:15:23
+User: Erica, Action: print, Timestamp: 2021-11-10 21:15:39
+User: Erica, Action: queue, Timestamp: 2021-11-10 21:15:44

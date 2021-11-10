@@ -8,8 +8,10 @@ public interface Printer extends Remote {
     String queue(String printer) throws IOException;
     String topQueue(String printer, int job) throws IOException;
     Map<String, PrinterObject> getPrinters() throws RemoteException;
-    String start(String username, String password) throws RemoteException;
-    String stop() throws RemoteException;
+    String login(String username, String password) throws RemoteException;
+    String logout() throws RemoteException;
+    String start() throws IOException;
+    String stop() throws IOException;
     String restart() throws IOException;
     String status(String printer) throws IOException;
     String readConfig(String parameter) throws IOException;
@@ -17,6 +19,7 @@ public interface Printer extends Remote {
     boolean checkPassword(String username, String password) throws RemoteException;
     boolean checkUsername(String username) throws RemoteException;
     boolean authorize(String username, int job) throws IOException;
+    boolean isPrintServerStopped() throws RemoteException;
 }
 
 
