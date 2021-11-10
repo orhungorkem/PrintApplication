@@ -55,7 +55,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public String print(String filename, String printer) throws IOException {
         if(currentSession!=null && currentSession.isAuthenticated()) {
 
-            if(!this.authorize(currentSession.getUsername(), 1)){
+            if(!this.authorize(currentSession.getUsername(), PRINT)){
                 return "You are not authorized for this job.";
             }
 
@@ -84,7 +84,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public String queue(String printer) throws IOException {
         if(currentSession!=null && currentSession.isAuthenticated()) {
 
-            if(!this.authorize(currentSession.getUsername(), 2)){
+            if(!this.authorize(currentSession.getUsername(), SEE_QUEUE)){
                 return "You are not authorized for this job.";
             }
 
@@ -118,7 +118,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             return "You do not have access to print server.";
         }
 
-        if(!this.authorize(currentSession.getUsername(), 3)){
+        if(!this.authorize(currentSession.getUsername(), TOP_QUEUE)){
             return "You are not authorized for this job.";
         }
 
@@ -171,7 +171,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         }
 
         // Check role permissions
-        if (!this.authorize(currentSession.getUsername(), 4)){
+        if (!this.authorize(currentSession.getUsername(), START)){
             return "Your role does not have permission to start server.";
         }
 
@@ -227,7 +227,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         }
 
         // Check role permissions
-        if (!authorize(currentSession.getUsername(), 5)){
+        if (!authorize(currentSession.getUsername(), STOP)){
             return "Your role does not have permission to stop server.";
         }
 
@@ -269,7 +269,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
         //make current session null and assign it to a new session
         if(currentSession!=null && currentSession.isAuthenticated()) {
 
-            if(!this.authorize(currentSession.getUsername(), 6)){
+            if(!this.authorize(currentSession.getUsername(), RESTART)){
                 return "You are not authorized for this job.";
             }
 
@@ -304,7 +304,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             return "You do not have access to print server.";
         }
 
-        if(!this.authorize(currentSession.getUsername(), 7)){
+        if(!this.authorize(currentSession.getUsername(), STATUS)){
             return "You are not authorized for this job.";
         }
 
@@ -394,7 +394,7 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
     public String readConfig(String parameter) throws IOException {
         if (currentSession != null && currentSession.isAuthenticated()) {
 
-            if(!this.authorize(currentSession.getUsername(), 8)){
+            if(!this.authorize(currentSession.getUsername(), READ_CONFIG)){
                 return "You are not authorized for this job.";
             }
 
@@ -404,47 +404,39 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            // Get username from session
-            var username = currentSession.getUsername();
 
-            // Read credential file
-            Path pathName = Path.of("data/cred-hashed.txt");
-            String actual = "";
-            try {
-                actual = Files.readString(pathName);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Get username and password
             String response = "";
-            var b = actual.split("\r\n");
-            for (int i = 0; i < b.length; i++) {
-                var item = b[i];
-                var arguments = item.split(",");
-                if (username.equals(arguments[1])) {
-                    switch(parameter) {
-                        case "username":
-                            response += "Username: " + arguments[1] + "\n";
-                            break;
-                        default:
-                            response = "There is no configuration parameter with the name: " + parameter + "\n";
-                    }
-
-                    return response;
-                }
+            if (parameter.equals("color")){
+                response = "Parameter: " + parameter + " has value: " + COLOR;
+            } else if (parameter.equals("scale")){
+                response = "Parameter: " + parameter + " has value: " + SCALE;
+            } else {
+                response = "No parameter found.";
             }
+
+            return response;
+
         }
 
-        return "You do not have access to the user configuration.";
+        return "You do not have access to print server.";
     }
 
     @Override
     public String setConfig(String parameter, String value) throws IOException {
         if (currentSession != null && currentSession.isAuthenticated()) {
 
-            if(!this.authorize(currentSession.getUsername(), 9)){
+            if(!this.authorize(currentSession.getUsername(), SET_CONFIG)){
                 return "You are not authorized for this job.";
+            }
+            String response = "";
+            if (parameter.equals("color")){
+                COLOR = value;
+                response = "Parameter: " + parameter + " is updated.";
+            } else if (parameter.equals("scale")){
+                SCALE = value;
+                response = "Parameter: " + parameter + " is updated.";
+            } else {
+                response = "No parameter found.";
             }
 
             // Log action
@@ -453,71 +445,10 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            // Get username from session
-            var username = currentSession.getUsername();
-
-            // Read credential file
-            Path pathName = Path.of("data/cred-hashed.txt");
-            String actual = "";
-            FileWriter writer = null;
-            try {
-                // Get file
-                actual = Files.readString(pathName);
-
-                // Create temp file
-                writer = new FileWriter("data/cred-hashed-temp.txt", true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Get username and password
-            String response = "";
-            var b = actual.split("\r\n");
-            for (int i = 0; i < b.length; i++) {
-                var item = b[i];
-                var arguments = item.split(",");
-                if (username.equals(arguments[1])) {
-                    switch(parameter) {
-                        case "password":
-                            var pass = this.saltPassword(value, arguments[0]);
-                            var pwHashed = pass.hashCode();
-                            item = "" + arguments[0] + "," + username + "," + pwHashed;
-                            response = "" + parameter + "is updated \n";
-                            break;
-                        case "username":
-                            item = "" + arguments[0] + ","  + value + "," + arguments[2];
-                            this.currentSession.setUsername(value);
-                            response = "" + parameter + " is updated \n";
-                            break;
-                        default:
-                            response = "There is no configuration parameter with the name: " + parameter + "\n";
-                    }
-                }
-
-                // Write to temp file
-                try {
-                    writer.write("" + item + "\r\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            // Close write mode
-            try {
-                writer.close();
-                Path oldSource = Paths.get("data/cred-hashed.txt");
-                Path newSource = Paths.get("data/cred-hashed-temp.txt");
-                Files.delete(oldSource);
-                Files.move(newSource, newSource.resolveSibling("cred-hashed.txt"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
             return response;
         }
 
-        return "You do not have access to the user configuration.";
+        return "You do not have access to print server.";
     }
 
     public String saltPassword(String password, String salt) {
