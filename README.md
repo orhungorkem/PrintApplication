@@ -28,6 +28,12 @@ To run the program, first run ApplicationServer.java and then run Client.java.
 * Printer2
 * Printer3
 
+# Default printer server configuration:
+
+  color | scale 
+  --- | --- 
+  black | fit 
+
 # ACR
 In the table bellow we can see the system users and their roles
 
@@ -40,7 +46,8 @@ David | role-0
 Erica | role-0
 Fred | role-0
 George | role-0
-user-0 -> user-9 | role-0
+user-0 -> user-8 | role-0
+user-9 | role-none
 <br>
 
 In the table bellow we can see the permission binary for each action
@@ -87,5 +94,13 @@ Operation | setConfig | readConfig | status | stop | start | restart | topQueue 
 restart | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 
 role-3 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 1
 AND | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 
+
+Not permitted to readConfiguration:
+
+Operation | setConfig | readConfig | status | stop | start | restart | topQueue | seeQueue | print
+--- |--- | --- | --- | --- |--- |--- |--- |--- |--- | 
+restart | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+role-3 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | 1
+AND | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
 
 In order to allow power-user to restart the printer we need the <b>AND result</b> to be <b>equal</b> to the <b>restart-operation-permission</b>.

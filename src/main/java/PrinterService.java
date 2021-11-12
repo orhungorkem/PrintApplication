@@ -287,6 +287,11 @@ public class PrinterService extends UnicastRemoteObject implements Printer {
             }
         }
 
+        // Set config
+        COLOR = "black";
+        SCALE = "fit";
+        STOPPED = false;
+
         return "Print server restarted.";
     }
 
