@@ -21,6 +21,8 @@ To run the program, first run ApplicationServer.java and then run Client.java.
 * Erica,password-Erica
 * Fred,password-Fred
 * George,password-George
+* Henry,password-Henry
+* Ida,password-Ida
 
 # Default printer names:  
 
@@ -40,14 +42,16 @@ In the table bellow we can see the system users and their roles
 Username | Role 
 --- | --- 
 Alice | role-1 
-Bob | role-2
 Cecilia | role-3
 David | role-0
 Erica | role-0
 Fred | role-0
-George | role-0
 user-0 -> user-8 | role-0
 user-9 | role-none
+Bob | role-none
+George | role-2
+Henry | role-0
+Ida | role-3
 <br>
 
 In the table bellow we can see the permission binary for each action
