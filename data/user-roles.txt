@@ -1,11 +1,11 @@
 Alice,role-1
-Bob,role-2
+Bob,role-none
 Cecilia,role-3
 Ida,role-3
 David,role-0
 Erica,role-0
 Fred,role-0
-George,role-0
+George,role-2
 Henry,role-0
 user-0,role-0
 user-1,role-0
