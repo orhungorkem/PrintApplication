@@ -30,8 +30,9 @@ class DummyTest {
         }
 
         // Create cred for users with roles
-        String users[]={"Alice","Bob", "Cecilia", "David", "Erica", "Fred", "George"};
-        for (int i = 0; i < 7; i++) {
+        String users[]={"Alice","Bob", "Cecilia", "David", "Erica", "Fred", "George", "Henry", "Ida"};
+        var range = users.length;
+        for (int i = 0; i < range; i++) {
             // Add salt to password
             var id = i + 10;
             System.out.println(id);
